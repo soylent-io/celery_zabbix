@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import zbxsend
+import platform
 
 
 if sys.version_info < (3,):
@@ -233,11 +234,17 @@ class Command(celery.bin.base.Command):
             config = ConfigParser()
             config.readfp(StringIO(text))
             if not self.zabbix_server:
-                self.zabbix_server = config.get('general', 'Server')
-                if ',' in self.zabbix_server:
-                    self.zabbix_server = self.zabbix_server.split(',')[0]
+                if config.has_option('general', 'ServerActive'):
+                    self.zabbix_server = config.get('general', 'ServerActive')
+                elif config.has_option('general', 'Server'):
+                    self.zabbix_server = config.get('general', 'Server')
+                    if ',' in self.zabbix_server:
+                        self.zabbix_server = self.zabbix_server.split(',')[0]
             if not self.zabbix_nodename:
-                self.zabbix_nodename = config.get('general', 'Hostname')
+                if config.has_option('general', 'Hostname'):
+                    self.zabbix_nodename = config.get('general', 'Hostname')
+                else:
+                    self.zabbix_nodename = platform.node()
         log.debug('Using zabbix server %s', self.zabbix_server)
         log.debug('Using zabbix nodename %s', self.zabbix_nodename)
 
